@@ -1,0 +1,22 @@
+{
+ "name": "Want or Need",
+ "short_name": "Want or Need",
+ "start_url": "./",
+ "display": "standalone",
+ "background_color": "#f2f4f1",
+ "theme_color": "#1f3d35",
+ "icons": [
+  {
+   "src": "icon-180.png",
+   "sizes": "180x180",
+   "type": "image/png"
+  },
+  {
+   "src": "icon-512.png",
+   "sizes": "512x512",
+   "type": "image/png"
+  }
+ ],
+ "scope": "./",
+ "id": "./"
+}

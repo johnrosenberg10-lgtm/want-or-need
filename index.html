@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Want or Need">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f2f4f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1311" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<title>Want or Need</title>
+<style>
+/* Layout: one-screen phone app — header, scrolling cart list, fixed thumb bar at the bottom. */
+:root{
+  --bg:#f2f4f1; --surface:#ffffff; --ink:#18211c; --muted:#5d6a62; --line:#dbe2dc;
+  --accent:#1f3d35; --on-accent:#ffffff; --accent-soft:#e2ebe6;
+  --need:#1e9a52; --need-bg:#e1f4e7; --need-ink:#0d5a2e;
+  --want:#e2b200; --want-bg:#fff3c4; --want-ink:#634b00;
+  --over:#c2410c; --danger:#b3261e; --scrim:rgba(16,24,20,.45);
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --r:14px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1311; --surface:#18201c; --ink:#e8eee9; --muted:#9aa89f; --line:#2a3530;
+  --accent:#a6dcc8; --on-accent:#0e1a15; --accent-soft:#1f2b26;
+  --need:#43c97b; --need-bg:#12301f; --need-ink:#8ee6b0;
+  --want:#f2cc3c; --want-bg:#352c0c; --want-ink:#f7dc72;
+  --over:#fb923c; --danger:#f2867d; --scrim:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1311; --surface:#18201c; --ink:#e8eee9; --muted:#9aa89f; --line:#2a3530;
+  --accent:#a6dcc8; --on-accent:#0e1a15; --accent-soft:#1f2b26;
+  --need:#43c97b; --need-bg:#12301f; --need-ink:#8ee6b0;
+  --want:#f2cc3c; --want-bg:#352c0c; --want-ink:#f7dc72;
+  --over:#fb923c; --danger:#f2867d; --scrim:rgba(0,0,0,.6); color-scheme:dark}
+
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;letter-spacing:-.01em}
+.app{max-width:560px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+.view{flex:1;display:flex;flex-direction:column;padding-inline:16px;padding-block:20px 120px;gap:18px}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.muted{color:var(--muted)}
+.tnum{font-variant-numeric:tabular-nums}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:0 20px;border-radius:var(--r);font-weight:700;font-size:17px;transition:transform .08s}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:var(--on-accent)}
+.btn-quiet{background:var(--accent-soft);color:var(--ink)}
+.btn-line{border:1.5px solid var(--line);background:var(--surface)}
+.btn-need{background:var(--need);color:#fff}
+.btn-want{background:var(--want);color:#2a2100}
+.btn-danger{color:var(--danger);background:transparent;border:1.5px solid var(--line)}
+.btn-block{width:100%}
+.link{color:var(--muted);font-weight:600;padding:10px 4px;text-decoration:underline;text-underline-offset:3px}
+
+/* Home */
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.brand h1{font-size:32px;line-height:1}
+.brand h1 .w{color:var(--want-ink)} .brand h1 .n{color:var(--need-ink)}
+.sync{font-size:12px;color:var(--muted)}
+.resume{background:var(--surface);border:1.5px solid var(--accent);border-radius:var(--r);padding:16px;display:grid;gap:10px}
+.resume .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.search{width:100%;min-height:48px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 14px}
+.history{display:grid;gap:10px;list-style:none;margin:0;padding:0}
+.hcard{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:center}
+.hcard .store{font-weight:700;font-size:17px;min-width:0;overflow-wrap:anywhere}
+.hcard .when{font-size:13px;color:var(--muted);grid-column:1}
+.counts{grid-row:1 / span 2;grid-column:2;display:flex;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:4px 10px;font-size:13px;font-weight:700;font-variant-numeric:tabular-nums}
+.chip.need{background:var(--need-bg);color:var(--need-ink)}
+.chip.want{background:var(--want-bg);color:var(--want-ink)}
+.empty{border:1.5px dashed var(--line);border-radius:var(--r);padding:22px 18px;text-align:center;color:var(--muted)}
+.empty strong{display:block;color:var(--ink);font-size:17px;margin-bottom:4px}
+
+/* Form */
+.field{display:grid;gap:8px}
+.field label{font-weight:600}
+.input{width:100%;min-height:54px;border-radius:12px;border:1.5px solid var(--line);background:var(--surface);padding:0 14px;font-size:18px}
+.stepper{display:flex;align-items:center;gap:14px}
+.stepper button{width:52px;height:52px;border-radius:12px;background:var(--accent-soft);font-size:26px;font-weight:700;line-height:1}
+.stepper .limnum{font-family:var(--display);font-size:30px;width:3.4em;height:52px;text-align:center;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);-moz-appearance:textfield}
+.stepper .limnum::-webkit-inner-spin-button,.stepper .limnum::-webkit-outer-spin-button{-webkit-appearance:none;margin:0}
+.stamp{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
+
+/* Cart */
+.carthead{display:grid;gap:12px;position:sticky;top:env(safe-area-inset-top,0px);background:var(--bg);padding-block:4px 10px;z-index:2}
+.carthead .top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.carthead h2{font-size:26px;line-height:1.1;overflow-wrap:anywhere}
+.meter{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.slots{display:flex;gap:6px;flex-wrap:wrap}
+.slot{width:16px;height:16px;border-radius:50%;border:2px solid var(--want)}
+.slot.on{background:var(--want)}
+.slot.over{background:var(--over);border-color:var(--over)}
+.meter .txt{font-weight:600;font-variant-numeric:tabular-nums}
+.meter .txt.over{color:var(--over)}
+.items{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.item{width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:14px 14px;border-radius:12px;min-width:0}
+.item.need{background:var(--need-bg);color:var(--need-ink)}
+.item.want{background:var(--want-bg);color:var(--want-ink)}
+.item .nm{flex:1;min-width:0;font-weight:600;font-size:17px;overflow-wrap:anywhere;color:var(--ink)}
+.item .sub{display:block;font-size:12px;font-weight:500;color:var(--muted)}
+.tag{font-size:11px;font-weight:800;letter-spacing:.08em;padding:4px 8px;border-radius:6px;flex:none}
+.item.need .tag{background:var(--need);color:#fff}
+.item.want .tag{background:var(--want);color:#2a2100}
+.overnote{color:var(--over);font-weight:700}
+
+.bar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px));z-index:5}
+.bar .in{max-width:560px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* Summary */
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.col{border-radius:var(--r);padding:14px;min-width:0}
+.col.want{background:var(--want-bg)} .col.need{background:var(--need-bg)}
+.col h3{font-size:18px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.col.want h3{color:var(--want-ink)} .col.need h3{color:var(--need-ink)}
+.col ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}
+.col li{font-weight:600;overflow-wrap:anywhere;padding-bottom:6px;border-bottom:1px solid color-mix(in srgb, currentColor 14%, transparent)}
+.col li:last-child{border-bottom:0}
+.col .none{color:var(--muted);font-weight:500}
+
+/* Overlays */
+.scrim{position:fixed;inset:0;background:var(--scrim);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.scrim.center{align-items:center;padding:16px}
+.sheet{background:var(--surface);width:100%;max-width:560px;border-radius:20px 20px 0 0;padding:20px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:12px;animation:up .18s ease-out}
+.dialog{background:var(--surface);width:100%;max-width:420px;border-radius:20px;padding:22px 18px;display:grid;gap:14px;animation:pop .16s ease-out}
+.sheet h3,.dialog h3{font-size:22px}
+.grab{width:40px;height:5px;border-radius:3px;background:var(--line);margin:-6px auto 4px}
+.preview{display:grid;gap:6px;padding:16px;border-radius:var(--r);border:1.5px solid var(--line)}
+.wn{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.wn .btn{min-height:64px;font-size:20px}
+.warn{color:var(--over);font-weight:600}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-weight:600;font-size:14px;z-index:40;max-width:calc(100% - 32px);text-align:center}
+@keyframes up{from{transform:translateY(24px);opacity:.4}to{transform:none;opacity:1}}
+@keyframes pop{from{transform:scale(.96);opacity:.4}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="app" id="app"></div>
+<div id="overlay"></div>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(() => {
+"use strict";
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+const clone = o => JSON.parse(JSON.stringify(o));
+
+/* ---------- State ---------- */
+const S = {
+  carts: {},                 // id -> cart
+  settings: { defaultLimit: 3 },
+  view: "home", openId: null, query: "", newLimit: 3, synced: false, histShown: 50,
+};
+let pending = null;          // item waiting for want/need choice
+
+/* ---------- Storage: this phone first (instant), account copy as backup ---------- */
+const LS = "want-or-need.v1";
+function lsLoad() { try { return JSON.parse(localStorage.getItem(LS)) } catch { return null } }
+let lsWarned = false;
+function lsSave() {
+  try { localStorage.setItem(LS, JSON.stringify({ carts: S.carts, settings: S.settings })) }
+  catch { if (!lsWarned) { lsWarned = true; toast("This phone's storage is full or blocked. Carts may not be kept.") } }
+}
+let cloud = null; const queues = {};
+function persist(key) {
+  lsSave();
+  if (!cloud) return;
+  const value = key === "settings" ? S.settings : S.carts[key];
+  const body = value ? clone(value) : null;
+  queues[key] = (queues[key] || Promise.resolve())
+    .then(() => body ? cloud.doc(key).set(body) : cloud.doc(key).delete())
+    .catch(e => console.warn("backup failed", e));
+}
+async function initCloud() {
+  if (!window.claude || !window.claude.use) return;
+  try {
+    const [db, user] = await Promise.all([claude.use("db"), claude.use("user")]);
+    if (!db || !user) return;
+    const id = await user.id(); if (!id) return;
+    const col = db.collection("data/users/" + id);
+    const snap = await col.get();
+    const remote = {}; const toUpload = [];
+    snap.docs.forEach(d => {
+      const v = clone(d.data() || {});
+      if (d.id === "settings") S.settings = { ...v, ...S.settings };
+      else if (d.id.startsWith("c_")) remote[d.id] = v;
+    });
+    // Keep whichever copy of each cart was changed last; push phone-only carts up.
+    for (const [k, c] of Object.entries(S.carts)) {
+      if (!remote[k] || (c.updatedAt || 0) > (remote[k].updatedAt || 0)) { remote[k] = c; toUpload.push(k) }
+      else if ((c.updatedAt || 0) === (remote[k].updatedAt || 0)) remote[k] = c;
+    }
+    const changed = Object.keys(remote).length !== Object.keys(S.carts).length ||
+      Object.keys(remote).some(k => remote[k] !== S.carts[k]);
+    S.carts = remote; cloud = col; S.synced = true; sanitize();
+    const closed = autoCloseSweep();
+    if (closed.length && S.view === "cart" && !activeCart()) { S.view = "home"; closeOverlay(); pending = null }
+    autoCloseNotice(closed);
+    toUpload.forEach(persist);
+    if (snap.empty) persist("settings");
+    lsSave();
+    if (!$("#overlay").innerHTML) render(); else if (changed) setTimeout(() => !$("#overlay").innerHTML && render(), 0);
+  } catch (e) { console.warn("account backup unavailable", e) }
+}
+
+/* ---------- Helpers ---------- */
+const dateFmt = new Intl.DateTimeFormat([], { weekday: "short", month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+const dateCache = new Map();
+const fmtDate = iso => { let s = dateCache.get(iso); if (!s) { s = dateFmt.format(new Date(iso)); dateCache.set(iso, s) } return s };
+const PAGE = 50;
+const activeCart = () => Object.values(S.carts).filter(c => c.status === "active").sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0] || null;
+const counts = c => ({ want: c.items.filter(i => i.kind === "want").length, need: c.items.filter(i => i.kind === "need").length });
+const MAX_LIMIT = 100;
+// Any want limit, from any source (stepper, typing, saved data), ends up a whole number from 0 to 100.
+function clampLimit(v, fallback = 3) {
+  const n = Math.floor(Number(v));
+  return Number.isFinite(n) ? Math.min(MAX_LIMIT, Math.max(0, n)) : Math.min(MAX_LIMIT, Math.max(0, fallback));
+}
+function setLimit(n, keepTyped) {
+  S.newLimit = clampLimit(n, S.newLimit);
+  const inp = $("#limInput"); if (inp && !keepTyped) inp.value = S.newLimit;
+  const w = $("#limWord"); if (w) w.textContent = S.newLimit === 1 ? "want item" : "want items";
+}
+function sanitize() {
+  S.settings.defaultLimit = clampLimit(S.settings.defaultLimit);
+  for (const c of Object.values(S.carts)) c.limit = clampLimit(c.limit);
+}
+function touch(c) { c.updatedAt = Date.now(); persist(c.id) }
+let toastT;
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.hidden = false; clearTimeout(toastT); toastT = setTimeout(() => t.hidden = true, 2600) }
+function go(view, openId) { S.view = view; S.openId = openId ?? S.openId; closeOverlay(); render(); window.scrollTo(0, 0) }
+
+/* ---------- Views ---------- */
+function render() {
+  const app = $("#app");
+  if (S.view === "new") app.innerHTML = viewNew();
+  else if (S.view === "cart" && activeCart()) app.innerHTML = viewCart(activeCart());
+  else if (S.view === "summary" && S.carts[S.openId]) app.innerHTML = viewSummary(S.carts[S.openId]);
+  else { S.view = "home"; app.innerHTML = viewHome() }
+  if (S.view === "new") { setTimeout(() => $("#storeName")?.focus(), 50); tickStamp() }
+  scheduleAutoClose();
+}
+
+/* ---------- Auto-close: no running clock. Checked on open, on return to the app,
+   and by a single timer set for the moment the open cart turns 5 hours old. ---------- */
+const AUTO_CLOSE_MS = 5 * 60 * 60 * 1000;
+const timeFmt = new Intl.DateTimeFormat([], { hour: "numeric", minute: "2-digit" });
+const closeAt = c => Date.parse(c.createdAt) + AUTO_CLOSE_MS;
+let closeTimer = null, closeTimerFor = 0;
+function autoCloseSweep() {
+  const now = Date.now(), closed = [];
+  for (const c of Object.values(S.carts)) {
+    if (c.status === "active" && now >= closeAt(c)) { c.status = "done"; c.autoClosed = true; c.finishedAt = closeAt(c); touch(c); closed.push(c) }
+  }
+  return closed;
+}
+function autoCloseNotice(closed) {
+  if (closed.length) toast(`${closed.length === 1 ? closed[0].store + " cart was" : closed.length + " carts were"} open 5 hours, so ${closed.length === 1 ? "it was" : "they were"} finished and saved.`);
+}
+function autoCloseNow() {
+  closeTimerFor = 0;                            // whatever fired, reschedule from scratch
+  const closed = autoCloseSweep();
+  if (!closed.length) return scheduleAutoClose();
+  if (S.view === "cart" || (S.view === "summary" && closed.some(c => c.id === S.openId))) { pending = null; closeOverlay(); S.view = "home"; S.histShown = PAGE }
+  render(); autoCloseNotice(closed);
+}
+function scheduleAutoClose() {
+  const c = activeCart(); const due = c ? closeAt(c) : 0;
+  if (due === closeTimerFor) return;            // already set for this cart (or none needed)
+  clearTimeout(closeTimer); closeTimer = null; closeTimerFor = due;
+  if (c) closeTimer = setTimeout(autoCloseNow, Math.min(Math.max(due - Date.now(), 0) + 250, 2147483000));
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") autoCloseNow() });
+
+// The date stamp on the new-cart form updates once a minute, and only while that form is on screen.
+let stampTimer = null;
+function tickStamp() {
+  clearTimeout(stampTimer); const s = $("#nowStamp"); if (!s) return;
+  s.textContent = dateFmt.format(new Date());
+  stampTimer = setTimeout(tickStamp, 60000 - (Date.now() % 60000) + 50);
+}
+
+function viewHome() {
+  const act = activeCart();
+  const q = S.query.trim().toLowerCase();
+  const all = Object.values(S.carts).filter(c => c.status === "done");
+  const done = all.sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    .filter(c => !q || c.store.toLowerCase().includes(q) || fmtDate(c.createdAt).toLowerCase().includes(q) ||
+      c.items.some(i => i.name.toLowerCase().includes(q)));
+  const total = all.length;
+  return `<section class="view">
+    <div class="brand"><h1><span class="w">Want</span> or <span class="n">Need</span></h1>
+      <span class="sync">${S.synced ? "On this phone + backed up" : "Saved on this phone"}</span></div>
+    ${act ? `<div class="resume" id="resumeCard">
+        <div class="eyebrow">Paused cart</div>
+        <div class="row"><div style="min-width:0"><strong style="overflow-wrap:anywhere">${esc(act.store)}</strong><div class="muted" style="font-size:13px">${esc(fmtDate(act.createdAt))}</div></div>
+          <div class="counts" style="grid-row:auto">${chips(act)}</div></div>
+        <button class="btn btn-primary btn-block" data-act="resume">Resume cart</button>
+      </div>` : ""}
+    <button class="btn ${act ? "btn-quiet" : "btn-primary"} btn-block" data-act="new">+ New cart</button>
+    <div class="field">
+      <div class="eyebrow" id="histLabel">Past carts${total ? ` · ${total}` : ""}</div>
+      ${total ? `<input class="search" id="search" type="search" placeholder="Search store, date or item" value="${esc(S.query)}" aria-label="Search past carts">` : ""}
+    </div>
+    ${total === 0 ? `<div class="empty"><strong>No finished carts yet</strong>Start a cart when you walk into a store. Finished carts land here with the date, store and want/need counts.</div>`
+      : done.length === 0 ? `<div class="empty">No carts match “${esc(S.query)}”.</div>`
+      : `${q ? `<div class="muted" style="font-size:14px">${done.length} match${done.length === 1 ? "" : "es"}</div>` : ""}
+        <ul class="history">${done.slice(0, S.histShown).map(c => `<li><button class="hcard" data-act="open" data-id="${c.id}">
+          <span class="store">${esc(c.store)}</span>
+          <span class="counts">${chips(c)}</span>
+          <span class="when">${esc(fmtDate(c.createdAt))}${c.autoClosed ? " · auto-closed" : ""}</span></button></li>`).join("")}</ul>
+        ${done.length > S.histShown ? `<button class="btn btn-quiet btn-block" data-act="more">Show ${Math.min(PAGE, done.length - S.histShown)} more · ${done.length - S.histShown} older</button>` : ""}`}
+  </section>`;
+}
+function chips(c) { const k = counts(c); return `<span class="chip need" data-n="${k.need}">${k.need} need</span><span class="chip want" data-n="${k.want}">${k.want} want</span>` }
+
+function viewNew() {
+  return `<form class="view" id="newForm" autocomplete="off" novalidate>
+    <div><div class="eyebrow">New cart</div><h2 style="font-size:28px">Where are you shopping?</h2></div>
+    <div class="field"><label for="storeName">Store name</label>
+      <input class="input" id="storeName" required maxlength="60" placeholder="e.g. Target on 5th St"></div>
+    <div class="field"><label id="limLbl">Want limit for this trip</label>
+      <div class="stepper" role="group" aria-labelledby="limLbl">
+        <button type="button" data-act="lim" data-d="-1" aria-label="Fewer wants">−</button>
+        <input id="limInput" class="limnum tnum" type="number" inputmode="numeric" min="0" max="${MAX_LIMIT}" step="1" value="${S.newLimit}" aria-label="Want limit, 0 to ${MAX_LIMIT}">
+        <button type="button" data-act="lim" data-d="1" aria-label="More wants">+</button>
+        <span class="muted" id="limWord">${S.newLimit === 1 ? "want item" : "want items"}</span>
+      </div>
+      <span class="muted" style="font-size:14px">Tap the number to type it, from 0 to ${MAX_LIMIT}. You'll get a reminder for every want past it.</span></div>
+    <div class="stamp"><span class="muted">Date &amp; time</span><strong class="tnum" id="nowStamp">${esc(dateFmt.format(new Date()))}</strong></div>
+    <span class="muted" style="font-size:14px">Carts close and save automatically after 5 hours.</span>
+    <button class="btn btn-primary btn-block" type="submit">Start cart</button>
+    <button class="link" type="button" data-act="home">Cancel</button>
+  </form>`;
+}
+
+function viewCart(c) {
+  const k = counts(c); const over = k.want > c.limit;
+  const slots = Math.max(c.limit, k.want);
+  const dots = slots <= 30 ? Array.from({ length: slots }, (_, i) => `<span class="slot ${i < k.want ? (i >= c.limit ? "over" : "on") : ""}"></span>`).join("") : "";
+  const items = [...c.items].reverse();
+  return `<section class="view">
+    <div class="carthead">
+      <div class="top"><div style="min-width:0"><div class="eyebrow">${esc(fmtDate(c.createdAt))}</div><h2>${esc(c.store)}</h2></div>
+        <button class="btn btn-line" data-act="pause" style="flex:none;min-height:40px;padding:0 14px;font-size:15px">Pause</button></div>
+      <div class="meter" aria-live="polite">
+        <span class="txt ${over ? "over" : ""}">Wants ${k.want} of ${c.limit}${over ? " · over limit" : ""}</span>
+        ${dots ? `<span class="slots" aria-hidden="true">${dots}</span>` : ""}
+        <span class="muted" id="autoCloseAt" style="flex-basis:100%;font-size:13px">Closes automatically at ${esc(timeFmt.format(closeAt(c)))}</span>
+        <span class="chip need">${k.need} need</span>
+      </div>
+    </div>
+    ${items.length ? `<ul class="items">${items.map(i => `<li><button class="item ${i.kind}" data-act="itemMenu" data-id="${i.id}">
+        <span class="nm">${esc(i.name)}${i.over ? `<span class="sub overnote">Added past the want limit</span>` : ""}</span>
+        <span class="tag">${i.kind === "need" ? "NEED" : "WANT"}</span></button></li>`).join("")}</ul>`
+      : `<div class="empty"><strong>Cart is empty</strong>Tap <b>Add item</b> and type what you picked up. Each item goes in as a <span style="color:var(--need-ink);font-weight:700">need</span> or a <span style="color:var(--want-ink);font-weight:700">want</span>.</div>`}
+    <div class="bar"><div class="in">
+      <button class="btn btn-primary" data-act="add">+ Add item</button>
+      <button class="btn btn-line" data-act="finish">Finish cart</button>
+    </div></div>
+  </section>`;
+}
+
+function viewSummary(c) {
+  const wants = c.items.filter(i => i.kind === "want"), needs = c.items.filter(i => i.kind === "need");
+  const list = arr => arr.length ? `<ul>${arr.map(i => `<li>${esc(i.name)}</li>`).join("")}</ul>` : `<ul><li class="none">None</li></ul>`;
+  const final = c.status === "active";
+  const over = wants.length - c.limit;
+  return `<section class="view">
+    <div><div class="eyebrow">${final ? "Cart summary" : "Past cart"}</div><h2 style="font-size:28px;overflow-wrap:anywhere">${esc(c.store)}</h2>
+      <div class="muted">${esc(fmtDate(c.createdAt))} · want limit ${c.limit}${over > 0 ? ` · <span class="warn">${over} over</span>` : ""}${c.autoClosed ? ` · <span id="autoNote">closed automatically after 5 hours</span>` : ""}</div></div>
+    <div class="cols">
+      <div class="col want"><h3>Wants <span class="tnum">${wants.length}</span></h3>${list(wants)}</div>
+      <div class="col need"><h3>Needs <span class="tnum">${needs.length}</span></h3>${list(needs)}</div>
+    </div>
+    ${final ? `<button class="btn btn-primary btn-block" data-act="done">Done</button>
+        <button class="link" data-act="resume">Back to cart</button>`
+      : `<button class="btn btn-primary btn-block" data-act="home">Back to carts</button>
+        <button class="link" data-act="delCart" style="color:var(--danger)">Delete this cart</button>`}
+  </section>`;
+}
+
+/* ---------- Overlays ---------- */
+function overlay(html, center) { $("#overlay").innerHTML = `<div class="scrim ${center ? "center" : ""}" data-act="scrim">${html}</div>` }
+function closeOverlay() { $("#overlay").innerHTML = "" }
+
+function showItemPrompt() {
+  const c = activeCart(); const k = counts(c);
+  overlay(`<div class="sheet" role="dialog" aria-label="Add item"><div class="grab"></div>
+    <h3>Add an item</h3>
+    <div class="preview">
+      <label for="itemName" class="eyebrow">Item name</label>
+      <input class="input" id="itemName" maxlength="80" value="${esc(pending.name)}" placeholder="e.g. Paper towels" autocomplete="off" enterkeyhint="done">
+    </div>
+    <div class="muted tnum" style="font-size:14px">Wants so far: ${k.want} of ${c.limit}</div>
+    <div class="wn"><button class="btn btn-want" data-act="pick" data-kind="want">Want</button><button class="btn btn-need" data-act="pick" data-kind="need">Need</button></div>
+    <button class="link" data-act="close">Cancel</button></div>`);
+  setTimeout(() => $("#itemName")?.focus(), 60);
+}
+
+function showLimitDialog(c, isSwitch) {
+  const k = counts(c);
+  overlay(`<div class="dialog" role="alertdialog" aria-labelledby="limT" aria-describedby="limD">
+    <div class="eyebrow warn">Want limit reached</div>
+    <h3 id="limT">Are you sure you want to add this?</h3>
+    <p id="limD" style="margin:0">You set a limit of <b>${c.limit}</b> want${c.limit === 1 ? "" : "s"} for this trip. You already have <b>${k.want}</b>.
+      <b>${esc(pending.name)}</b> would be want #${k.want + 1}.</p>
+    <div class="wn"><button class="btn btn-line" data-act="limRemove">${isSwitch ? "Keep as need" : "Remove item"}</button>
+      <button class="btn btn-want" data-act="${isSwitch ? "switchAnyway" : "limAdd"}">Add anyway</button></div>
+  </div>`, true);
+}
+
+function showItemMenu(item) {
+  const other = item.kind === "need" ? "want" : "need";
+  overlay(`<div class="sheet" role="dialog" aria-label="Item options"><div class="grab"></div>
+    <h3 style="overflow-wrap:anywhere">${esc(item.name)}</h3>
+    <button class="btn ${other === "need" ? "btn-need" : "btn-want"} btn-block" data-act="switch" data-id="${item.id}">Change to ${other}</button>
+    <button class="btn btn-danger btn-block" data-act="remove" data-id="${item.id}">Remove from cart</button>
+    <button class="link" data-act="close">Cancel</button></div>`);
+}
+
+function confirmBox(title, text, okLabel, okAct) {
+  overlay(`<div class="dialog" role="alertdialog"><h3>${title}</h3><p style="margin:0">${text}</p>
+    <div class="wn"><button class="btn btn-line" data-act="close">Cancel</button><button class="btn btn-primary" data-act="${okAct}">${okLabel}</button></div></div>`, true);
+}
+
+/* ---------- Cart actions ---------- */
+function addItem(kind, over) {
+  const c = activeCart();
+  c.items.push({ id: uid("i_"), name: pending.name, kind, over: !!over, at: Date.now() });
+  touch(c); pending = null; closeOverlay(); render();
+  toast(`${kind === "need" ? "Need" : "Want"} added: ${c.items[c.items.length - 1].name}`);
+}
+function finishCart(c) { c.status = "done"; c.finishedAt = Date.now(); touch(c) }
+
+/* ---------- Events ---------- */
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const act = el.dataset.act;
+  if (act === "scrim" && e.target !== el) return;
+  const c = activeCart();
+  switch (act) {
+    case "scrim": case "close": pending = null; closeOverlay(); break;
+    case "home": {   // back from a past cart keeps your place in the list
+      const back = S.view === "summary" && S.carts[S.openId]?.status === "done";
+      if (!back) S.histShown = PAGE;
+      go("home"); if (back) window.scrollTo(0, S.scrollY || 0); break;
+    }
+    case "pause": S.histShown = PAGE; go("home"); toast("Cart paused. Resume it any time."); break;
+    case "new":
+      if (c) { confirmBox("Start a new cart?", `Your paused cart at <b>${esc(c.store)}</b> will be finished and saved as it is.`, "Start new", "newForce") }
+      else { S.newLimit = S.settings.defaultLimit; go("new") }
+      break;
+    case "newForce": finishCart(c); S.newLimit = S.settings.defaultLimit; go("new"); break;
+    case "lim": setLimit(S.newLimit + Number(el.dataset.d)); break;
+    case "resume": go("cart"); break;
+    case "add": pending = { name: "" }; showItemPrompt(); break;
+    case "pick": {
+      const name = ($("#itemName")?.value || "").trim();
+      if (!name) { $("#itemName").focus(); toast("Type a name first"); break }
+      pending.name = name;
+      const kind = el.dataset.kind;
+      if (kind === "want" && counts(c).want >= c.limit) { showLimitDialog(c, false); break }
+      addItem(kind, false); break;
+    }
+    case "limAdd": addItem("want", true); break;
+    case "limRemove": { const sw = pending && pending.switchId; pending = null; closeOverlay(); toast(sw ? "Kept as need" : "Item left out"); break }
+    case "itemMenu": { const it = c.items.find(i => i.id === el.dataset.id); if (it) showItemMenu(it); break }
+    case "switch": {
+      const it = c.items.find(i => i.id === el.dataset.id); if (!it) break;
+      if (it.kind === "need" && counts(c).want >= c.limit) { pending = { name: it.name, switchId: it.id }; showLimitDialog(c, true); break }
+      it.kind = it.kind === "need" ? "want" : "need"; it.over = false; touch(c); closeOverlay(); render(); break;
+    }
+    case "switchAnyway": { const it = c.items.find(i => i.id === pending.switchId); if (it) { it.kind = "want"; it.over = true; touch(c) } pending = null; closeOverlay(); render(); break }
+    case "remove": c.items = c.items.filter(i => i.id !== el.dataset.id); touch(c); closeOverlay(); render(); toast("Removed"); break;
+    case "finish":
+      if (!c.items.length) { confirmBox("Finish an empty cart?", "Nothing has been added yet. You can still save it.", "Finish", "finishGo"); break }
+      go("summary", c.id); break;
+    case "finishGo": go("summary", c.id); break;
+    case "done": finishCart(c); S.histShown = PAGE; go("home"); toast("Cart saved"); break;
+    case "open": S.scrollY = window.scrollY; go("summary", el.dataset.id); break;
+    case "more": { const y = window.scrollY; S.histShown += PAGE; render(); window.scrollTo(0, y); break }
+    case "delCart": confirmBox("Delete this cart?", "It will be removed from your history for good.", "Delete", "delCartGo"); break;
+    case "delCartGo": delete S.carts[S.openId]; persist(S.openId); go("home"); toast("Cart deleted"); break;
+  }
+});
+document.addEventListener("submit", e => {
+  if (e.target.id !== "newForm") return;
+  e.preventDefault();
+  const store = $("#storeName").value.trim();
+  if (!store) { $("#storeName").focus(); toast("Type the store name first"); return }
+  const prev = activeCart(); if (prev) finishCart(prev);
+  const li = $("#limInput"); S.newLimit = clampLimit(li.value === "" ? S.newLimit : li.value, S.newLimit);
+  const c = { id: uid("c_"), store, limit: S.newLimit, createdAt: new Date().toISOString(), status: "active", items: [], updatedAt: Date.now() };
+  S.carts[c.id] = c; persist(c.id);
+  if (S.settings.defaultLimit !== S.newLimit) { S.settings.defaultLimit = S.newLimit; persist("settings") }
+  go("cart");
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "limInput") {
+    const raw = e.target.value;
+    if (raw === "") return;                       // let them clear the box while typing
+    const n = clampLimit(raw, S.newLimit);
+    setLimit(n, String(n) === raw);
+  }
+  if (e.target.id === "search") { S.query = e.target.value; S.histShown = PAGE; const pos = e.target.selectionStart; render(); const s = $("#search"); s.focus(); s.setSelectionRange(pos, pos) }
+});
+document.addEventListener("change", e => {
+  if (e.target.id === "limInput") setLimit(clampLimit(e.target.value === "" ? S.newLimit : e.target.value, S.newLimit));
+});
+document.addEventListener("keydown", e => {
+  if (e.target.id === "limInput" && e.key.length === 1 && !/[0-9]/.test(e.key)) e.preventDefault();   // digits only
+  if (e.target.id === "limInput" && e.key === "Enter") { e.preventDefault(); e.target.blur() }
+  if (e.key === "Enter" && e.target.id === "itemName") { e.preventDefault(); e.target.blur() }
+  if (e.key === "Escape" && $("#overlay").innerHTML) { pending = null; closeOverlay() }
+});
+/* ---------- Boot: read this phone's copy synchronously so data shows on the first frame ---------- */
+const saved = lsLoad();
+if (saved) { S.carts = saved.carts || {}; S.settings = { ...S.settings, ...(saved.settings || {}) } }
+sanitize();
+const closedOnOpen = autoCloseSweep();
+if (activeCart()) S.view = "cart";
+render();
+autoCloseNotice(closedOnOpen);
+initCloud();
+})();
+</script>
+
+<script>
+// Save the app on the phone for offline use, and ask the phone not to clear its storage.
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost"))
+  addEventListener("load", () => { navigator.serviceWorker.register("sw.js").catch(() => {}); navigator.storage?.persist?.().catch(() => {}) });
+</script>
+</body></html>
